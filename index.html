@@ -63,7 +63,8 @@
             <li><b>Section 1:</b> अपना नाम, 10-अंकों का मोबाइल नंबर एवं 8-अक्षरों का MRU/GR कोड अनिवार्य रूप से भरें (अधिकतम 25 MRUs)।</li>
             <li>रीडिंग/बिलिंग मोबाइल डिवाइस सिलेक्शन की पुष्टि करें।</li>
             <li><b>Section 2 (Invoice):</b> यदि आपको इनवॉइस प्रिंटिंग हेतु विवरण देना है, तो इनवॉइस चेकबॉक्स को टिक करके सभी आवश्यक फ़ील्ड्स भरें।</li>
-            <li>सभी विवरण सही-सही भरने के बाद अंत में <b>Submit</b> बटन पर क्लिक करें।</li>
+            <li>नीचे दिए गए <b>अन्य निर्देशों</b> को भी ध्यानपूर्वक पढ़कर ही फॉर्म भरें।।</li>
+			<li>सभी विवरण सही-सही भरने के बाद अंत में <b>Submit</b> बटन पर क्लिक करें।</li>
         </ul>
     </details>
 
@@ -436,32 +437,37 @@
             await db.ref('devices/' + finalDeviceId).set(deviceData);
 
             // 3. String Output for Telegram Bot
-            let masterMrusStr = masterMruList.join(';');
-            let result = `${mainName}#${userMobile}#${masterMrusStr}#DeviceId:${finalDeviceId}`;
+// 3. String Output for Telegram Bot
+        let masterMrusStr = masterMruList.join(';');
+        let result = `${mainName}#${userMobile}#${masterMrusStr}#DeviceId:${finalDeviceId}`;
 
-            if (cbInvoice) {
-                result += `#ID1,${getVal('etId1Name')},${getVal('etId1Address')},${getVal('etId1Mobile')},${getVal('etId1Order')},${idAssignedMrus[1].join(';')}`;
-                if (document.getElementById('cbEnableId2').checked) {
-                    result += `#ID2,${getVal('etId2Name')},${getVal('etId2Address')},${getVal('etId2Mobile')},${getVal('etId2Order')},${idAssignedMrus[2].join(';')}`;
-                }
-                if (document.getElementById('cbEnableId3').checked) {
-                    result += `#ID3,${getVal('etId3Name')},${getVal('etId3Address')},${getVal('etId3Mobile')},${getVal('etId3Order')},${idAssignedMrus[3].join(';')}`;
-                }
+        if (cbInvoice) {
+            result += `#ID1,${getVal('etId1Name')},${getVal('etId1Address')},${getVal('etId1Mobile')},${getVal('etId1Order')},${idAssignedMrus[1].join(';')}`;
+            if (document.getElementById('cbEnableId2').checked) {
+                result += `#ID2,${getVal('etId2Name')},${getVal('etId2Address')},${getVal('etId2Mobile')},${getVal('etId2Order')},${idAssignedMrus[2].join(';')}`;
             }
-
-            alert("Data successfully submitted!");
-            if (tg && tg.sendData) {
-                tg.sendData(result);
+            if (document.getElementById('cbEnableId3').checked) {
+                result += `#ID3,${getVal('etId3Name')},${getVal('etId3Address')},${getVal('etId3Mobile')},${getVal('etId3Order')},${idAssignedMrus[3].join(';')}`;
             }
-            location.reload();
-
-        } catch (error) {
-            console.error("Firebase Error: ", error);
-            alert("Data submit karne me error aaya: " + error.message);
-            btnSubmit.innerText = "Submit Details to Admin";
-            btnSubmit.disabled = false;
         }
+
+        alert("Data successfully submitted!");
+        if (tg && tg.sendData) {
+            tg.sendData(result);
+        }
+
+        // --- AUTO CLOSE WEBAPP ---
+        if (tg && tg.close) {
+            tg.close(); // Yeh line WebApp ko automatic band kar degi
+        }
+
+    } catch (error) {
+        console.error("Firebase Error: ", error);
+        alert("Data submit karne me error aaya: " + error.message);
+        btnSubmit.innerText = "Submit Details to Admin";
+        btnSubmit.disabled = false;
     }
+	}
 
     function validateIdSection(idNum) {
         if (!getVal(`etId${idNum}Name`)) { alert(`ID ${idNum} Full Name bharein!`); return false; }
