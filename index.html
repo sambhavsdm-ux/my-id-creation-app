@@ -341,8 +341,8 @@
         return obj;
     }
 
-    // --- Final Data Submission ---
-    function processAndSendData() {
+    // --- Final Data Submission (Async/Await Fixed) ---
+    async function processAndSendData() {
         const mainName = document.getElementById('etName').value.trim();
         const userMobile = document.getElementById('etUserMobile').value.trim();
         
@@ -358,7 +358,10 @@
                 alert("Kripya dusre mobile ka Device ID darj karein!");
                 return;
             }
-            if (!deviceIdRegex.test(finalDeviceId)) {alert("Section 1 me sahi 16-digit DEVICE ID bharein (keval small letter(a-f) aur number allowed hain)!");return; }
+            if (!deviceIdRegex.test(finalDeviceId)) {
+                alert("Section 1 me sahi 16-digit DEVICE ID bharein (keval small letter(a-f) aur number allowed hain)!");
+                return; 
+            }
         }
 
         if (!mainName) { alert("Section 1 me Full Name bharein!"); return; }
@@ -422,27 +425,42 @@
             assigned_mrus: masterMruList
         };
 
-        // 2. Save Data to Firebase Realtime Database
-        db.ref('users/' + userMobile).set(userData);
-        db.ref('devices/' + finalDeviceId).set(deviceData);
+        // Submit Button Disable and Status Update
+        const btnSubmit = document.querySelector('.btn-submit');
+        btnSubmit.innerText = "Submitting Data...";
+        btnSubmit.disabled = true;
 
-        // 3. String Output for Telegram Bot
-        let masterMrusStr = masterMruList.join(';');
-        let result = `${mainName}#${userMobile}#${masterMrusStr}#DeviceId:${finalDeviceId}`;
+        try {
+            // 2. Save Data to Firebase Realtime Database with await
+            await db.ref('users/' + userMobile).set(userData);
+            await db.ref('devices/' + finalDeviceId).set(deviceData);
 
-        if (cbInvoice) {
-            result += `#ID1,${getVal('etId1Name')},${getVal('etId1Address')},${getVal('etId1Mobile')},${getVal('etId1Order')},${idAssignedMrus[1].join(';')}`;
-            if (document.getElementById('cbEnableId2').checked) {
-                result += `#ID2,${getVal('etId2Name')},${getVal('etId2Address')},${getVal('etId2Mobile')},${getVal('etId2Order')},${idAssignedMrus[2].join(';')}`;
+            // 3. String Output for Telegram Bot
+            let masterMrusStr = masterMruList.join(';');
+            let result = `${mainName}#${userMobile}#${masterMrusStr}#DeviceId:${finalDeviceId}`;
+
+            if (cbInvoice) {
+                result += `#ID1,${getVal('etId1Name')},${getVal('etId1Address')},${getVal('etId1Mobile')},${getVal('etId1Order')},${idAssignedMrus[1].join(';')}`;
+                if (document.getElementById('cbEnableId2').checked) {
+                    result += `#ID2,${getVal('etId2Name')},${getVal('etId2Address')},${getVal('etId2Mobile')},${getVal('etId2Order')},${idAssignedMrus[2].join(';')}`;
+                }
+                if (document.getElementById('cbEnableId3').checked) {
+                    result += `#ID3,${getVal('etId3Name')},${getVal('etId3Address')},${getVal('etId3Mobile')},${getVal('etId3Order')},${idAssignedMrus[3].join(';')}`;
+                }
             }
-            if (document.getElementById('cbEnableId3').checked) {
-                result += `#ID3,${getVal('etId3Name')},${getVal('etId3Address')},${getVal('etId3Mobile')},${getVal('etId3Order')},${idAssignedMrus[3].join(';')}`;
+
+            alert("Data successfully submitted!");
+            if (tg && tg.sendData) {
+                tg.sendData(result);
             }
+            location.reload();
+
+        } catch (error) {
+            console.error("Firebase Error: ", error);
+            alert("Data submit karne me error aaya: " + error.message);
+            btnSubmit.innerText = "Submit Details to Admin";
+            btnSubmit.disabled = false;
         }
-
-        alert("Data successfully submitted!");
-        tg.sendData(result);
-        location.reload();
     }
 
     function validateIdSection(idNum) {
