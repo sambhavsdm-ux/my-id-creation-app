@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ID CREATION DETAIL</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Roboto, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 12px; color: #333; }
+        .header-title { font-size: 20px; font-weight: bold; color: #006400; text-align: center; margin-bottom: 4px; }
+        .header-sub { font-size: 13px; font-weight: bold; color: #D32F2F; text-align: center; margin-bottom: 12px; }
+        
+        /* Instructions Banner */
+        .info-card { background: #E3F2FD; border: 1px solid #90CAF9; padding: 10px; border-radius: 6px; margin-bottom: 14px; font-size: 12px; color: #0D47A1; }
+        .info-card summary { font-weight: bold; cursor: pointer; font-size: 13px; color: #1565C0; outline: none; }
+        .info-card ul { margin: 6px 0 0 0; padding-left: 18px; }
+        .info-card li { margin-bottom: 4px; }
+
+        .sec-title { font-size: 15px; font-weight: bold; color: #1E3C72; margin-top: 10px; margin-bottom: 8px; }
+        
+        input[type="text"], input[type="tel"], input[type="number"], select {
+            width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none;
+        }
+        
+        .row-flex { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .btn-add { background-color: #1E3C72; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+        
+        .list-container { background: #F0F4F8; border: 1px solid #dcdcdc; border-radius: 6px; margin-bottom: 12px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #E0E0E0; }
+        .list-item:last-child { border-bottom: none; }
+        .btn-delete { background: transparent; border: none; color: #D32F2F; font-weight: bold; font-size: 16px; cursor: pointer; }
+
+        .device-box { background: #FFF3E0; border: 1px solid #FFE0B2; padding: 12px; border-radius: 6px; margin-top: 10px; margin-bottom: 12px; }
+        .device-title { font-size: 13px; font-weight: bold; color: #E65100; margin-bottom: 8px; }
+        .radio-group { display: flex; gap: 20px; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
+        
+        .checkbox-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; background: #e8eef5; padding: 10px; border-radius: 6px; }
+        .warning-text { color: #D32F2F; font-size: 12px; font-weight: bold; margin-bottom: 4px; margin-top: 6px; }
+        .note-box { background-color: #FFF8E1; border: 1px solid #FFE082; padding: 8px; border-radius: 6px; margin-top: 6px; margin-bottom: 10px; }
+        .note-text { color: #B45309; font-size: 12px; font-weight: bold; line-height: 1.4; }
+        
+        .hidden { display: none; }
+        .id-box { background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 8px; }
+        
+        .btn-submit { width: 100%; background-color: #4CAF50; color: white; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        .device-badge { background: #E8F5E9; border: 1px solid #A5D6A7; color: #2E7D32; padding: 6px 10px; border-radius: 4px; font-family: monospace; font-weight: bold; font-size: 13px; margin-bottom: 8px; display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <div class="header-title">ID CREATION DETAIL</div>
+
+    <!-- Instructions collapsible box at the top -->
+    <details class="info-card" open>
+        <summary>📌 Instructions / दिशा-निर्देश (ज़रूर पढ़ें)</summary>
+        <ul>
+            <li><b>Section 1:</b> अपना नाम, 10-अंकों का मोबाइल नंबर एवं 8-अक्षरों का MRU/GR कोड अनिवार्य रूप से भरें (अधिकतम 25 MRUs)।</li>
+            <li>रीडिंग/बिलिंग मोबाइल डिवाइस सिलेक्शन की पुष्टि करें।</li>
+            <li><b>Section 2 (Invoice):</b> यदि आपको इनवॉइस प्रिंटिंग हेतु विवरण देना है, तो इनवॉइस चेकबॉक्स को टिक करके सभी आवश्यक फ़ील्ड्स भरें।</li>
+            <li>सभी विवरण सही-सही भरने के बाद अंत में <b>Submit</b> बटन पर क्लिक करें।</li>
+        </ul>
+    </details>
+
+    <!-- SECTION 1 -->
+    <div class="sec-title">SECTION 1: User & MRU/GR Details</div>
+    <input type="text" id="etName" placeholder="Full Name *">
+    <input type="tel" id="etUserMobile" maxlength="10" placeholder="User Mobile Number (10 digits) *">
+
+    <div class="row-flex">
+        <input type="text" id="etMruInput" maxlength="8" placeholder="Enter 8 character MRU/GR code *" style="margin-bottom:0;">
+        <button class="btn-add" onclick="addMasterMru()">ADD</button>
+    </div>
+    <div style="font-size: 11px; color: #666; margin-bottom: 4px;">* Maximum 25 MRUs allowed</div>
+    <div id="lvMruList" class="list-container"></div>
+
+    <!-- Device Selection Section -->
+    <div class="device-box">
+        <div class="device-title">क्या आप रीडिंग/बिलिंग कार्य के लिए इसी मोबाइल का उपयोग करेंगे?</div>
+        
+        <div id="autoDeviceDisplay" class="device-badge">Device ID: Detecting...</div>
+
+        <div class="radio-group">
+            <label><input type="radio" name="rbDeviceChoice" value="YES" checked onchange="toggleDeviceInput()"> हाँ (YES)</label>
+            <label><input type="radio" name="rbDeviceChoice" value="NO" onchange="toggleDeviceInput()"> नहीं (NO)</label>
+        </div>
+
+        <div id="otherDeviceContainer" class="hidden">
+            <div class="warning-text" style="color: #E65100; font-size: 11px; margin-bottom: 6px;">
+                💡 <b>निर्देश:</b> आप जिस मोबाइल में रीडिंग/बिलिंग का कार्य करना चाहते हैं, उसमें <b>Rdr_Utility App</b> इंस्टॉल करके ओपन करें, आपको DEVICE ID मिल जाएगी।
+            </div>
+            <input type="text" id="etManualDeviceId" maxlength="16" placeholder="Enter Other Mobile Device ID *">
+        </div>
+    </div>
+
+    <!-- SECTION 2 HEADER -->
+    <div class="checkbox-row">
+        <span style="font-weight: bold; color: #1E3C72; font-size: 14px;">SECTION 2: Billing इनवॉइस के लिए डिटेल भरें</span>
+        <input type="checkbox" id="cbEnableInvoice" onchange="toggleInvoiceSection()">
+    </div>
+
+    <div id="tvInvoiceWarning" class="warning-text hidden">स्पष्ट व पूर्ण जानकारी भरें, क्योंकि यह जानकारी आपके इनवॉइस में प्रिंट होगी.</div>
+    
+    <!-- SECTION 2 FULL NOTE -->
+    <div id="tvSecondaryNote" class="note-box hidden">
+        <div class="note-text">
+            <b>Note:</b><br>
+            1. नीचे Base Rate में, आपको एक उपभोक्ता के रीडिंग व बिलिंग करने पर जितना रुपए मिल रहा है, वह डालना है। जैसा कि शहरी क्षेत्र के लिए ₹8 एवं ग्रामीण क्षेत्र के लिए ₹10 है।<br>
+            2. यदि आपका बेस रेट किसी अन्य दर (जैसे ₹6, ₹7 या ₹9 आदि) पर आधारित है, तो कृपया सही दर ही दर्ज करें।
+       <br>3. Auto punch billing के लिए,सॉफ्टवेयर ₹1 माइनस करके ऑटोमेटिक इनवॉइस बना देगा.     
+        </div>
+    </div>
+
+    <!-- INVOICE CONTAINER -->
+    <div id="llInvoiceContainer" class="hidden">
+        
+        <!-- ID 1 DETAILS -->
+        <div class="id-box">
+            <div style="font-weight:bold; margin-bottom: 6px;">ID 1 Details</div>
+            <input type="text" id="etId1Name" placeholder="Full Name *">
+            <input type="text" id="etId1Address" placeholder="Address *">
+            <input type="tel" id="etId1Mobile" maxlength="10" placeholder="Mobile No. (10 digits) *">
+            <input type="text" id="etId1Order" placeholder="आदेश क्रमांक 51-..../सामा./.900., कांकेर *">
+
+            <div class="row-flex">
+                <select id="spId1Mru" style="margin-bottom:0;"></select>
+                <input type="number" id="etId1Rate" placeholder="Base Rate" style="width: 100px; margin-bottom:0;">
+                <button class="btn-add" onclick="assignMru(1)">Add MRU</button>
+            </div>
+            <div id="lvId1MruList" class="list-container"></div>
+        </div>
+
+        <!-- ID 2 SECTION -->
+        <div class="checkbox-row">
+            <span style="font-weight: bold; font-size: 14px;">Add ID 2 Details</span>
+            <input type="checkbox" id="cbEnableId2" onchange="toggleIdSection(2)">
+        </div>
+        <div id="llId2Container" class="id-box hidden">
+            <input type="text" id="etId2Name" placeholder="ID2 Full Name *">
+            <input type="text" id="etId2Address" placeholder="Address *">
+            <input type="tel" id="etId2Mobile" maxlength="10" placeholder="Mobile No. *">
+            <input type="text" id="etId2Order" placeholder="आदेश क्रमांक... *">
+
+            <div class="row-flex">
+                <select id="spId2Mru" style="margin-bottom:0;"></select>
+                <input type="number" id="etId2Rate" placeholder="Base Rate" style="width: 100px; margin-bottom:0;">
+                <button class="btn-add" onclick="assignMru(2)">Add MRU</button>
+            </div>
+            <div id="lvId2MruList" class="list-container"></div>
+        </div>
+
+        <!-- ID 3 SECTION -->
+        <div class="checkbox-row">
+            <span style="font-weight: bold; font-size: 14px;">Add ID 3 Details</span>
+            <input type="checkbox" id="cbEnableId3" onchange="toggleIdSection(3)">
+        </div>
+        <div id="llId3Container" class="id-box hidden">
+            <input type="text" id="etId3Name" placeholder="ID3 Full Name *">
+            <input type="text" id="etId3Address" placeholder="Address *">
+            <input type="tel" id="etId3Mobile" maxlength="10" placeholder="Mobile No. *">
+            <input type="text" id="etId3Order" placeholder="आदेश क्रमांक... *">
+
+            <div class="row-flex">
+                <select id="spId3Mru" style="margin-bottom:0;"></select>
+                <input type="number" id="etId3Rate" placeholder="Base Rate" style="width: 100px; margin-bottom:0;">
+                <button class="btn-add" onclick="assignMru(3)">Add MRU</button>
+            </div>
+            <div id="lvId3MruList" class="list-container"></div>
+        </div>
+
+        <div class="warning-text" style="margin-top:10px;">यदि कोई ऐसा MRU/ग्रुप है, जिसके डाटा को दो आईडी में बांटकर इनवॉइस बनाना है। तो वह Option इनवॉइस बनते समय उपलब्ध होगी।</div>
+    </div>
+
+    <button class="btn-submit" onclick="processAndSendData()">Submit Details to Admin</button>
+
+<script>
+    // --- FIREBASE INITIALIZATION ---
+    const firebaseConfig = {
+	apiKey: "AIzaSyCPW4WxogIT4aiL-rbZCqP2gqIRuHv53I0",
+	authDomain: "rdrutilityapp.firebaseapp.com",
+	databaseURL: "https://rdrutilityapp-default-rtdb.asia-southeast1.firebasedatabase.app",
+	projectId: "rdrutilityapp",
+	storageBucket: "rdrutilityapp.firebasestorage.app",
+	messagingSenderId: "930325614212",
+	appId: "1:930325614212:web:1db4f238e1dbfa5771bcd1",
+    };
+    
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
+
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    let autoDeviceId = "";
+
+    window.onload = function() {
+        if (tg.showAlert) {
+            tg.showAlert("कृपया फॉर्म भरने से पहले ऊपर दिए गए 'Instructions / दिशा-निर्देश' को ध्यान से पढ़ें।");
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        autoDeviceId = urlParams.get('deviceId') || "UNKNOWN_DEVICE";
+        
+        document.getElementById('autoDeviceDisplay').innerText = "Detected Device ID: " + autoDeviceId;
+    };
+
+    let masterMruList = [];
+    let availableMruList = [];
+    let idAssignedMrus = { 1: [], 2: [], 3: [] };
+
+    function toggleDeviceInput() {
+        const isNo = document.querySelector('input[name="rbDeviceChoice"][value="NO"]').checked;
+        document.getElementById('otherDeviceContainer').classList.toggle('hidden', !isNo);
+    }
+
+    function addMasterMru() {
+        if (masterMruList.length >= 25) {
+            alert("Aap अधिकतम 25 MRUs hi add kar sakte hain!");
+            return;
+        }
+
+        const input = document.getElementById('etMruInput');
+        const mru = input.value.trim().toUpperCase();
+
+        if (mru.length !== 8) {
+            alert("MRU/GR code exactly 8 characters ka hona chahiye!");
+            return;
+        }
+        if (masterMruList.includes(mru)) {
+            alert("MRU/GR code pehle se add hai!");
+            return;
+        }
+
+        masterMruList.push(mru);
+        availableMruList.push(mru);
+        input.value = "";
+        renderMasterList();
+        updateSpinners();
+    }
+
+    function removeMasterMru(index) {
+        const code = masterMruList[index];
+        masterMruList.splice(index, 1);
+        
+        let availIdx = availableMruList.indexOf(code);
+        if (availIdx > -1) availableMruList.splice(availIdx, 1);
+
+        [1, 2, 3].forEach(idNum => {
+            idAssignedMrus[idNum] = idAssignedMrus[idNum].filter(item => !item.startsWith(code + ":"));
+            renderAssignedList(idNum);
+        });
+
+        renderMasterList();
+        updateSpinners();
+    }
+
+    function renderMasterList() {
+        const container = document.getElementById('lvMruList');
+        container.innerHTML = masterMruList.map((mru, i) => `
+            <div class="list-item">
+                <span><b>${i+1}.</b> ${mru}</span>
+                <button class="btn-delete" onclick="removeMasterMru(${i})">✖</button>
+            </div>
+        `).join('');
+    }
+
+    function updateSpinners() {
+        [1, 2, 3].forEach(idNum => {
+            const sp = document.getElementById(`spId${idNum}Mru`);
+            sp.innerHTML = availableMruList.map(mru => `<option value="${mru}">${mru}</option>`).join('');
+        });
+    }
+
+    function assignMru(idNum) {
+        const sp = document.getElementById(`spId${idNum}Mru`);
+        const rateInput = document.getElementById(`etId${idNum}Rate`);
+        const selectedMru = sp.value;
+        const rate = parseFloat(rateInput.value.trim());
+
+        if (!selectedMru) { alert("Koi MRU available nahi hai!"); return; }
+        if (isNaN(rate) || rate <= 0) { alert("Sahi Base Rate daalna anivarya hai!"); return; }
+
+        idAssignedMrus[idNum].push(`${selectedMru}:${rate}`);
+        availableMruList = availableMruList.filter(m => m !== selectedMru);
+        rateInput.value = "";
+
+        renderAssignedList(idNum);
+        updateSpinners();
+    }
+
+    function removeAssignedMru(idNum, index) {
+        const item = idAssignedMrus[idNum][index];
+        const mruCode = item.split(':')[0];
+        idAssignedMrus[idNum].splice(index, 1);
+
+        if (masterMruList.includes(mruCode) && !availableMruList.includes(mruCode)) {
+            availableMruList.push(mruCode);
+        }
+
+        renderAssignedList(idNum);
+        updateSpinners();
+    }
+
+    function renderAssignedList(idNum) {
+        const container = document.getElementById(`lvId${idNum}MruList`);
+        container.innerHTML = idAssignedMrus[idNum].map((item, i) => `
+            <div class="list-item">
+                <span>${item}</span>
+                <button class="btn-delete" onclick="removeAssignedMru(${idNum}, ${i})">✖</button>
+            </div>
+        `).join('');
+    }
+
+    function toggleInvoiceSection() {
+        const isChecked = document.getElementById('cbEnableInvoice').checked;
+        document.getElementById('tvInvoiceWarning').classList.toggle('hidden', !isChecked);
+        document.getElementById('tvSecondaryNote').classList.toggle('hidden', !isChecked);
+        document.getElementById('llInvoiceContainer').classList.toggle('hidden', !isChecked);
+    }
+
+    function toggleIdSection(idNum) {
+        const isChecked = document.getElementById(`cbEnableId${idNum}`).checked;
+        document.getElementById(`llId${idNum}Container`).classList.toggle('hidden', !isChecked);
+    }
+
+    // Helper to convert "MRU:Rate" array to Firebase object format
+    function buildMruRateMap(arr) {
+        let obj = {};
+        arr.forEach(item => {
+            let parts = item.split(':');
+            obj[parts[0]] = parseFloat(parts[1]);
+        });
+        return obj;
+    }
+
+    // --- Final Data Submission ---
+    function processAndSendData() {
+        const mainName = document.getElementById('etName').value.trim();
+        const userMobile = document.getElementById('etUserMobile').value.trim();
+        
+        const isSameDevice = document.querySelector('input[name="rbDeviceChoice"][value="YES"]').checked;
+        const deviceIdRegex = /^[0-9a-f]{16}$/;
+        let finalDeviceId = "";
+
+        if (isSameDevice) {
+            finalDeviceId = autoDeviceId;
+        } else {
+            finalDeviceId = document.getElementById('etManualDeviceId').value.trim();
+            if (!finalDeviceId) {
+                alert("Kripya dusre mobile ka Device ID darj karein!");
+                return;
+            }
+            if (!deviceIdRegex.test(finalDeviceId)) {alert("Section 1 me sahi 16-digit DEVICE ID bharein (keval small letter(a-f) aur number allowed hain)!");return; }
+        }
+
+        if (!mainName) { alert("Section 1 me Full Name bharein!"); return; }
+        if (userMobile.length !== 10 || isNaN(userMobile)) { alert("Section 1 me sahi 10-digit Mobile Number bharein!"); return; }        
+        
+        if (masterMruList.length === 0) { alert("Section 1 me kam se kam 1 MRU add karein!"); return; }
+
+        const cbInvoice = document.getElementById('cbEnableInvoice').checked;
+        let invoiceData = {};
+
+        if (cbInvoice) {
+            if (!validateIdSection(1)) return;
+            invoiceData["id1"] = {
+                name: getVal('etId1Name'),
+                address: getVal('etId1Address'),
+                mobile: getVal('etId1Mobile'),
+                order_no: getVal('etId1Order'),
+                mru_rates: buildMruRateMap(idAssignedMrus[1])
+            };
+
+            if (document.getElementById('cbEnableId2').checked) {
+                if (!validateIdSection(2)) return;
+                invoiceData["id2"] = {
+                    name: getVal('etId2Name'),
+                    address: getVal('etId2Address'),
+                    mobile: getVal('etId2Mobile'),
+                    order_no: getVal('etId2Order'),
+                    mru_rates: buildMruRateMap(idAssignedMrus[2])
+                };
+            }
+
+            if (document.getElementById('cbEnableId3').checked) {
+                if (!validateIdSection(3)) return;
+                invoiceData["id3"] = {
+                    name: getVal('etId3Name'),
+                    address: getVal('etId3Address'),
+                    mobile: getVal('etId3Mobile'),
+                    order_no: getVal('etId3Order'),
+                    mru_rates: buildMruRateMap(idAssignedMrus[3])
+                };
+            }
+        }
+
+        // 1. Prepare Firebase Objects
+        const userData = {
+            full_name: mainName,
+            mobile_number: userMobile,
+            is_same_device: isSameDevice ? "YES" : "NO",
+            device_id: finalDeviceId,
+            mru_list: masterMruList,
+            has_invoice_details: cbInvoice,
+            invoices: cbInvoice ? invoiceData : null,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        const deviceData = {
+            mobile_number: userMobile,
+            status: "Active",
+            expiry_date: "2026-12-31",
+            last_sync_date: new Date().toISOString().split('T')[0],
+            assigned_mrus: masterMruList
+        };
+
+        // 2. Save Data to Firebase Realtime Database
+        db.ref('users/' + userMobile).set(userData);
+        db.ref('devices/' + finalDeviceId).set(deviceData);
+
+        // 3. String Output for Telegram Bot
+        let masterMrusStr = masterMruList.join(';');
+        let result = `${mainName}#${userMobile}#${masterMrusStr}#DeviceId:${finalDeviceId}`;
+
+        if (cbInvoice) {
+            result += `#ID1,${getVal('etId1Name')},${getVal('etId1Address')},${getVal('etId1Mobile')},${getVal('etId1Order')},${idAssignedMrus[1].join(';')}`;
+            if (document.getElementById('cbEnableId2').checked) {
+                result += `#ID2,${getVal('etId2Name')},${getVal('etId2Address')},${getVal('etId2Mobile')},${getVal('etId2Order')},${idAssignedMrus[2].join(';')}`;
+            }
+            if (document.getElementById('cbEnableId3').checked) {
+                result += `#ID3,${getVal('etId3Name')},${getVal('etId3Address')},${getVal('etId3Mobile')},${getVal('etId3Order')},${idAssignedMrus[3].join(';')}`;
+            }
+        }
+
+        alert("Data successfully submitted!");
+        tg.sendData(result);
+        location.reload();
+    }
+
+    function validateIdSection(idNum) {
+        if (!getVal(`etId${idNum}Name`)) { alert(`ID ${idNum} Full Name bharein!`); return false; }
+        if (!getVal(`etId${idNum}Address`)) { alert(`ID ${idNum} Address bharein!`); return false; }
+        
+        let mob = getVal(`etId${idNum}Mobile`);
+        if (mob.length !== 10 || isNaN(mob)) { alert(`ID ${idNum} Mobile Number 10 digits ka hona chahiye!`); return false; }
+        
+        if (!getVal(`etId${idNum}Order`)) { alert(`ID ${idNum} Aadesh kramank bharein!`); return false; }
+        if (idAssignedMrus[idNum].length === 0) { alert(`ID ${idNum} me kam se kam 1 MRU add karein!`); return false; }
+        
+        return true;
+    }
+
+    function getVal(id) { return document.getElementById(id).value.trim(); }
+</script>
+</body>
+</html>
