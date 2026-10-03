@@ -343,6 +343,7 @@
     }
 
     // --- Final Data Submission (Async/Await Fixed) ---
+// --- Final Data Submission (With Existing Device ID Check) ---
     async function processAndSendData() {
         const mainName = document.getElementById('etName').value.trim();
         const userMobile = document.getElementById('etUserMobile').value.trim();
@@ -367,7 +368,6 @@
 
         if (!mainName) { alert("Section 1 me Full Name bharein!"); return; }
         if (userMobile.length !== 10 || isNaN(userMobile)) { alert("Section 1 me sahi 10-digit Mobile Number bharein!"); return; }        
-        
         if (masterMruList.length === 0) { alert("Section 1 me kam se kam 1 MRU add karein!"); return; }
 
         const cbInvoice = document.getElementById('cbEnableInvoice').checked;
@@ -406,69 +406,77 @@
             }
         }
 
-        // 1. Prepare Firebase Objects
-        const userData = {
-            full_name: mainName,
-            mobile_number: userMobile,
-            is_same_device: isSameDevice ? "YES" : "NO",
-            device_id: finalDeviceId,
-            mru_list: masterMruList,
-            has_invoice_details: cbInvoice,
-            invoices: cbInvoice ? invoiceData : null,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        };
-
-        const deviceData = {
-            mobile_number: userMobile,
-            status: "Active",
-            expiry_date: "2026-12-31",
-            last_sync_date: new Date().toISOString().split('T')[0],
-            assigned_mrus: masterMruList
-        };
-
-        // Submit Button Disable and Status Update
+        // UI Feedback: Button Disable
         const btnSubmit = document.querySelector('.btn-submit');
-        btnSubmit.innerText = "Submitting Data...";
+        btnSubmit.innerText = "Checking Device Status...";
         btnSubmit.disabled = true;
 
         try {
-            // 2. Save Data to Firebase Realtime Database with await
+            // --- CHECK 1: Firebase me Device ID check karna ---
+            const deviceSnapshot = await db.ref('devices/' + finalDeviceId).once('value');
+            
+            if (deviceSnapshot.exists()) {
+                alert("Error: Inputed Device ID Already Exist/Registered!");
+                btnSubmit.innerText = "Submit Details to Admin";
+                btnSubmit.disabled = false;
+                return; // Code aage nahi badhega
+            }
+
+            btnSubmit.innerText = "Submitting Data...";
+
+            // 1. Prepare Firebase Objects
+            const userData = {
+                full_name: mainName,
+                mobile_number: userMobile,
+                is_same_device: isSameDevice ? "YES" : "NO",
+                device_id: finalDeviceId,
+                mru_list: masterMruList,
+                has_invoice_details: cbInvoice,
+                invoices: cbInvoice ? invoiceData : null,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            const deviceData = {
+                mobile_number: userMobile,
+                status: "Active",
+                expiry_date: "2026-12-31",
+                last_sync_date: new Date().toISOString().split('T')[0],
+                assigned_mrus: masterMruList
+            };
+
+            // 2. Save Data to Firebase
             await db.ref('users/' + userMobile).set(userData);
             await db.ref('devices/' + finalDeviceId).set(deviceData);
 
             // 3. String Output for Telegram Bot
-// 3. String Output for Telegram Bot
-        let masterMrusStr = masterMruList.join(';');
-        let result = `${mainName}#${userMobile}#${masterMrusStr}#DeviceId:${finalDeviceId}`;
+            let masterMrusStr = masterMruList.join(';');
+            let result = `${mainName}#${userMobile}#${masterMrusStr}#DeviceId:${finalDeviceId}`;
 
-        if (cbInvoice) {
-            result += `#ID1,${getVal('etId1Name')},${getVal('etId1Address')},${getVal('etId1Mobile')},${getVal('etId1Order')},${idAssignedMrus[1].join(';')}`;
-            if (document.getElementById('cbEnableId2').checked) {
-                result += `#ID2,${getVal('etId2Name')},${getVal('etId2Address')},${getVal('etId2Mobile')},${getVal('etId2Order')},${idAssignedMrus[2].join(';')}`;
+            if (cbInvoice) {
+                result += `#ID1,${getVal('etId1Name')},${getVal('etId1Address')},${getVal('etId1Mobile')},${getVal('etId1Order')},${idAssignedMrus[1].join(';')}`;
+                if (document.getElementById('cbEnableId2').checked) {
+                    result += `#ID2,${getVal('etId2Name')},${getVal('etId2Address')},${getVal('etId2Mobile')},${getVal('etId2Order')},${idAssignedMrus[2].join(';')}`;
+                }
+                if (document.getElementById('cbEnableId3').checked) {
+                    result += `#ID3,${getVal('etId3Name')},${getVal('etId3Address')},${getVal('etId3Mobile')},${getVal('etId3Order')},${idAssignedMrus[3].join(';')}`;
+                }
             }
-            if (document.getElementById('cbEnableId3').checked) {
-                result += `#ID3,${getVal('etId3Name')},${getVal('etId3Address')},${getVal('etId3Mobile')},${getVal('etId3Order')},${idAssignedMrus[3].join(';')}`;
+
+            alert("Data successfully submitted!");
+            if (tg && tg.sendData) {
+                tg.sendData(result);
             }
-        }
+            if (tg && tg.close) {
+                tg.close();
+            }
 
-        alert("Data successfully submitted!");
-        if (tg && tg.sendData) {
-            tg.sendData(result);
+        } catch (error) {
+            console.error("Firebase Error: ", error);
+            alert("Data submit karne me error aaya: " + error.message);
+            btnSubmit.innerText = "Submit Details to Admin";
+            btnSubmit.disabled = false;
         }
-
-        // --- AUTO CLOSE WEBAPP ---
-        if (tg && tg.close) {
-            tg.close(); // Yeh line WebApp ko automatic band kar degi
-        }
-
-    } catch (error) {
-        console.error("Firebase Error: ", error);
-        alert("Data submit karne me error aaya: " + error.message);
-        btnSubmit.innerText = "Submit Details to Admin";
-        btnSubmit.disabled = false;
     }
-	}
-
     function validateIdSection(idNum) {
         if (!getVal(`etId${idNum}Name`)) { alert(`ID ${idNum} Full Name bharein!`); return false; }
         if (!getVal(`etId${idNum}Address`)) { alert(`ID ${idNum} Address bharein!`); return false; }
