@@ -201,17 +201,26 @@
     tg.expand();
 
     let autoDeviceId = "";
+	let tg = null;
+	try {
+    	tg = window.Telegram.WebApp;
+    	tg.ready();
+    	tg.expand();
+	} catch (e) {
+    console.warn("Telegram WebApp API not available (opened outside Telegram):", e);
+}
 
-    window.onload = function() {
-        if (tg.showAlert) {
-            tg.showAlert("कृपया फॉर्म भरने से पहले ऊपर दिए गए 'Instructions / दिशा-निर्देश' को ध्यान से पढ़ें।");
-        }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        autoDeviceId = urlParams.get('deviceId') || "UNKNOWN_DEVICE";
-        
-        document.getElementById('autoDeviceDisplay').innerText = "Detected Device ID: " + autoDeviceId;
-    };
+window.onload = function() {
+    try {
+        	if (tg && tg.showAlert) {
+	            tg.showAlert("कृपया फॉर्म भरने से पहले ऊपर दिए गए 'Instructions / दिशा-निर्देश' को ध्यान से पढ़ें।");
+        	}
+	    } catch (e) {}
+	
+	    const urlParams = new URLSearchParams(window.location.search);
+	    autoDeviceId = urlParams.get('device_id') || "UNKNOWN_DEVICE";  // 'deviceId' se 'device_id' kiya
+	    document.getElementById('autoDeviceDisplay').innerText = "Detected Device ID: " + autoDeviceId;
+	};
 
     let masterMruList = [];
     let availableMruList = [];
