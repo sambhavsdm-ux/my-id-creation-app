@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>ID CREATION DETAIL</title>
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -487,7 +487,11 @@ window.onload = function() {
 
         } catch (error) {
             console.error("Firebase Error: ", error);
-            alert("Data submit karne me error aaya: " + error.message);
+            let why = error.message;
+            if (/permission/i.test(why)) {
+                why = "यह मोबाइल नंबर या डिवाइस पहले से रजिस्टर है, या डेटा सर्वर के नियमों से मेल नहीं खा रहा। एडमिन से संपर्क करें। (" + error.message + ")";
+            }
+            alert("Data submit karne me error aaya: " + why);
             btnSubmit.innerText = "Submit Details to Admin";
             btnSubmit.disabled = false;
         }
