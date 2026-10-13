@@ -445,7 +445,7 @@ window.onload = function() {
 
             // Free trial: TRIAL_DAYS din (bharatiya samay ke hisaab se). Expiry usi tareekh ke aakhir tak maani jaati hai.
             // Trial ke baad Admin paid users ko admin_tool.py se "pay" karta hai aur baaki ko "expire-trials" se band.
-            const TRIAL_DAYS = 3;
+            const TRIAL_DAYS = 10;
             const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
             const trialEnd = new Date(Date.now() + IST_OFFSET_MS + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
